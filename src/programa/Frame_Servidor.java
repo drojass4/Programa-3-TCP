@@ -102,22 +102,26 @@ public class Frame_Servidor extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jbConectarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbConectarActionPerformed
-      System.out.println("Iniciando servidor");
-        txtArea.append("Servidor iniciado en el puerto " + PORT + ".\n");
-        try {
-            serverSocket = new ServerSocket(PORT);
-            new Thread(() -> {
-                while (true) {
-                    try {
-                        new ClientHandler(serverSocket.accept()).start();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+      txtArea.append("Iniciando servidor en el puerto " + PORT + "...\n");
+    try {
+        serverSocket = new ServerSocket(PORT);
+        txtArea.append("Servidor iniciado exitosamente.\n");
+        new Thread(() -> {
+            while (!serverSocket.isClosed()) {
+                try {
+                    Socket clientSocket = serverSocket.accept();
+                    txtArea.append("Cliente conectado desde: " + clientSocket.getInetAddress() + "\n");
+                    new ClientHandler(clientSocket, this).start();
+                } catch (IOException e) {
+                    txtArea.append("Error al aceptar conexión de cliente: " + e.getMessage() + "\n");
+                    e.printStackTrace();
                 }
-            }).start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            }
+        }).start();
+    } catch (IOException e) {
+        txtArea.append("Error al iniciar el servidor: " + e.getMessage() + "\n");
+        e.printStackTrace();
+    }
     }//GEN-LAST:event_jbConectarActionPerformed
 
     private void jbDesconectarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbDesconectarActionPerformed
@@ -134,34 +138,12 @@ public class Frame_Servidor extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jbDesconectarActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Frame_Servidor.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Frame_Servidor.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Frame_Servidor.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(Frame_Servidor.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
+     private void appendMessageToTextArea(String message) {
+        txtArea.append(message + "\n");
+    }
 
-        /* Create and display the form */
+    public static void main(String args[]) {
+       
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new Frame_Servidor().setVisible(true);
@@ -181,19 +163,28 @@ private static class ClientHandler extends Thread {
         private PrintWriter out;
         private BufferedReader in;
         private String name;
-           private static final int PORT = 12345;
-        private static HashMap<String, PrintWriter> clientMap = new HashMap<>();
-        public ClientHandler(Socket socket) {
-            this.socket = socket;
-        }
+      
+        private Frame_Servidor servidor;
+        
+       public ClientHandler(Socket socket, Frame_Servidor servidor) {
+        this.socket = socket;
+        this.servidor = servidor;
+    }
 
         public void run() {
             try {
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 out = new PrintWriter(socket.getOutputStream(), true);
-
-                out.println("Ingresa el mensaje: ");
-                name = in.readLine();
+                // Cliente conectado
+              
+                 servidor.appendMessageToTextArea("Nuevo cliente conectado desde: " + socket.getInetAddress());
+              
+                out.println("");
+                 name = in.readLine();
+            
+                //out.println("Ingresa el mensaje: ");
+                //name = in.readLine();
+                
                 synchronized (clientMap) {
                     clientMap.put(name, out);
                     updateUserList();
@@ -206,8 +197,11 @@ private static class ClientHandler extends Thread {
                         String targetName = splitMessage[0].substring(1);
                         String privateMessage = splitMessage[1];
                         sendMessage(targetName, privateMessage);
+                        servidor.appendMessageToTextArea(name + " ( privado a " + targetName + "): " + privateMessage);
+                        
                     } else {
                         broadcastMessage(name + ": " + message);
+                        servidor.appendMessageToTextArea(name + ": " + message);
                     }
                 }
             } catch (IOException e) {
@@ -219,6 +213,7 @@ private static class ClientHandler extends Thread {
                         updateUserList();
                     }
                     broadcastMessage(name + " Se ha desconectado.");
+                     servidor.appendMessageToTextArea(name + " se ha desconectado.");
                 }
                 try {
                     socket.close();
@@ -241,6 +236,7 @@ private static class ClientHandler extends Thread {
                 PrintWriter targetOut = clientMap.get(targetName);
                 if (targetOut != null) {
                     targetOut.println(name + " (private): " + message);
+                 
                 }
             }
         }
@@ -256,5 +252,3 @@ private static class ClientHandler extends Thread {
         }
     }
 }
-
-

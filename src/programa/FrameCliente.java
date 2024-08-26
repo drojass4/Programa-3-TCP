@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package programa;
 
 import java.io.BufferedReader;
@@ -46,10 +42,8 @@ public class FrameCliente extends javax.swing.JFrame {
          initComponents();
         TxtMensaje.setText("");
         AreaContactos.setModel(listModel);
-        AreaConversacion.setText("Si no selecciona el destinatario el mensaje se compartira con todos");
+        AreaConversacion.setText("Si no selecciona el destinatario \n el mensaje se compartira con todos \n");
 }   
-
-  
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -232,30 +226,24 @@ public class FrameCliente extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jbEnviarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbEnviarActionPerformed
-        
-     // toma el txt de mensaje 
+   
     String message = TxtMensaje.getText();
-    // Se verifica si tiene seleciionado el usuaroio seleccionado 
-    String selectedUser = AreaContactos.getSelectedValue(); // Usa el nombre del JList correctamente
+    String selectedUser = AreaContactos.getSelectedValue(); 
 
-    // Enviar el mensaje al servidor
-    // verifica si esta seleccionado el usuario para enviar el mensaje 
     if (selectedUser != null && !selectedUser.isEmpty()) {
         out.println("@" + selectedUser + " " + message); 
     } else {
         out.println(message);
     }
-
-   
-    AreaConversacion.append(" "  + message + "\n");
-
-    
-    TxtMensaje.setText("");
+    //AreaConversacion.append("mensaje: "  + message + "\n");
+        Limpiar();
     }//GEN-LAST:event_jbEnviarActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-       try {
+//Se conecta con el servidor
+        try {
         connectToServer();
+      jButton1.setEnabled(false);
     } catch (IOException ex) {
         Logger.getLogger(FrameCliente.class.getName()).log(Level.SEVERE, null, ex);
         JOptionPane.showMessageDialog(this, "No se pudo conectar al servidor.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -264,15 +252,14 @@ public class FrameCliente extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-          if (socket != null && !socket.isClosed()) {
+        // se desconecta del servidor
+        if (socket != null && !socket.isClosed()) {
             try {
                 String nombre= txtUsuario.getText();
                 listModel.removeElement(nombre);
                 socket.close(); // Cierra el ServerSocket
-               
                 AreaConversacion.append("Servidor desconectado.\n");
-            
-                
+                jButton1.setEnabled(true);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -280,25 +267,20 @@ public class FrameCliente extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void TxtMensajeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_TxtMensajeActionPerformed
-        // TODO add your handling code here:
+
     }//GEN-LAST:event_TxtMensajeActionPerformed
 
     private void btSeleccionarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btSeleccionarActionPerformed
 // se toma de https://es.stackoverflow.com/questions/254478/abrir-file-chooser-o-gestor-de-archivos-en-una-ruta-especifica
-
+//Ubicacion del archivo
 JFileChooser jf = new JFileChooser("C:\\Users\\david\\Desktop");
-//solo puedo selecionar archivos(txt o musica o imagen pero no carpetas: no directorios
 jf.setFileSelectionMode(JFileChooser.FILES_ONLY);
-//solo puedo seleccionar un archivo a la vez no varios a la vez
 jf.setMultiSelectionEnabled(false);
-//aqui filtro lo que quiero que se cargue
-//si solo permito mp3 lo pongo o si solo admito jpj, primero pongo la descripcion del archivo y luego el tipo de archivo
-//FileNameExtensionFilter filtro=new FileNameExtensionFilter("Descripcion de archivo","wav","Archivo Audio MP3","mp3","archivo imagen JPG","jpg");
+//cargue de archivos
 FileNameExtensionFilter filter=new FileNameExtensionFilter("Todos los Archivos", "txt", "html", "exe", "bad");
 jf.setFileFilter(filter);
-//mostrar el gestor de archivos y no deja hacer nada hasta que se selcione el archivo o me salga con cancelar
+//se selecciona un archivo
 int returnValue = jf.showOpenDialog(null);
-
 if(returnValue==JFileChooser.APPROVE_OPTION){
     File selecinarArchivo = jf.getSelectedFile();
     if(selecinarArchivo != null){
@@ -321,49 +303,37 @@ if(returnValue==JFileChooser.APPROVE_OPTION){
         JOptionPane.showMessageDialog(this, "Debe seleccionar un usuario antes de enviar un archivo.", "Advertencia", JOptionPane.WARNING_MESSAGE);
         return;
     }
-    
     // Obtener el nombre del archivo original
     Path sourcePath = Paths.get(rutaArchivo);
     String nombreArchivoOriginal = sourcePath.getFileName().toString();
-    
     // Crear un nuevo nombre de archivo con un identificador único
     // se puede utilizar uuid o hacer un numero random 
-
     String nuevoNombreArchivo = null;
-    //while(i<=num){
-	 
-  
-		 //i++;
-   // }
-    int numero =(int)(Math.random()*100+1);
+   // int numero =(int)(Math.random()*100+1);
     String nombre = txtUsuario.getText();	
     nuevoNombreArchivo = nombre +"_" + i + "_" + nombreArchivoOriginal;
     i++;
     Path destinoPath = Paths.get(destino, nuevoNombreArchivo);
-    
-
     // Copia el archivo seleccionado a la carpeta de destino
-    try {
-       
+    try { 
         Files.copy(sourcePath, destinoPath);
         AreaConversacion.append("Archivo copiado exitosamente a: " + destinoPath.toString() + "\n");
+        out.println("@" + selectedUser + " FILE " + rutaArchivo);
     } catch (IOException e) {
         JOptionPane.showMessageDialog(this, "Error al copiar el archivo: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         return;
     }
 
     // Enviar la ruta del archivo al servidor
-    out.println("@" + selectedUser + " FILE " + rutaArchivo);
-    AreaConversacion.append("Archivo enviado a " + selectedUser + ": " + rutaArchivo + "\n");
-
+    
+//    AreaConversacion.append("Archivo enviado a " + selectedUser + ": " + rutaArchivo + "\n");
     // Limpiar el campo de selección de archivo
     txtSeleccionArchivo.setText("");
 
     }//GEN-LAST:event_jbenviarrrrActionPerformed
 
     private void jbActualizarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbActualizarActionPerformed
-       
-    AreaContactos.setModel(listModel); 
+   
     }//GEN-LAST:event_jbActualizarActionPerformed
 
   
@@ -416,7 +386,6 @@ if(returnValue==JFileChooser.APPROVE_OPTION){
     private javax.swing.JLabel txtUsuario;
     // End of variables declaration//GEN-END:variables
  
-    
      public void updateUserList(String[] users) {
         listModel.clear();
         for (String user : users) {
@@ -424,8 +393,9 @@ if(returnValue==JFileChooser.APPROVE_OPTION){
         }
     }
      
-     
     
+     
+     
     private void connectToServer() throws IOException {
         socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -436,7 +406,6 @@ if(returnValue==JFileChooser.APPROVE_OPTION){
         txtUsuario.setText(name);
         new Thread(new FrameCliente.IncomingReader()).start();
         AreaContactos.setModel(listModel);
-       
     }
     
     private class IncomingReader implements Runnable {
@@ -461,8 +430,7 @@ if(returnValue==JFileChooser.APPROVE_OPTION){
             }
         }
     }
-    
-    
+   
  private void Limpiar(){
      TxtMensaje.setText("");
      AreaContactos.clearSelection();
