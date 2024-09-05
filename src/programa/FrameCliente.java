@@ -25,7 +25,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  * @author David Rojas
  */
 public class FrameCliente extends javax.swing.JFrame {
-    private static final String SERVER_ADDRESS = "localhost";
+    private static final String SERVER_ADDRESS = "127.0.0.1";
     private static final int SERVER_PORT = 12345;
     private Socket socket;
     private PrintWriter out;
@@ -43,6 +43,11 @@ public class FrameCliente extends javax.swing.JFrame {
         TxtMensaje.setText("");
         AreaContactos.setModel(listModel);
         AreaConversacion.setText("Si no selecciona el destinatario \n el mensaje se compartira con todos \n");
+        jbenviarrrr.setEnabled(false);
+        jbEnviar.setEnabled(false);
+        btSeleccionar.setEnabled(false);
+        jbActualizar.setEnabled(false);
+        jButton2.setEnabled(false);
 }   
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -90,9 +95,9 @@ public class FrameCliente extends javax.swing.JFrame {
         });
 
         jLabel3.setForeground(new java.awt.Color(204, 0, 51));
-        jLabel3.setText("Usted es: ");
+        jLabel3.setText("Bienvenido: ");
 
-        txtUsuario.setFont(new java.awt.Font("Times New Roman", 0, 18)); // NOI18N
+        txtUsuario.setFont(new java.awt.Font("Times New Roman", 0, 12)); // NOI18N
         txtUsuario.setForeground(new java.awt.Color(255, 0, 51));
         txtUsuario.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
 
@@ -147,7 +152,9 @@ public class FrameCliente extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel1)
-                        .addContainerGap(373, Short.MAX_VALUE))
+                        .addGap(145, 145, 145)
+                        .addComponent(jLabel2)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -178,28 +185,21 @@ public class FrameCliente extends javax.swing.JFrame {
                             .addGroup(layout.createSequentialGroup()
                                 .addGap(85, 85, 85)
                                 .addComponent(jLabel3)
-                                .addGap(26, 26, 26)
-                                .addComponent(txtUsuario, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(36, 36, 36)
-                                .addComponent(jLabel2)))
-                        .addGap(0, 0, Short.MAX_VALUE))))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(txtUsuario, javax.swing.GroupLayout.PREFERRED_SIZE, 75, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(0, 250, Short.MAX_VALUE))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(20, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(19, 19, 19)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(0, 9, Short.MAX_VALUE)
-                                .addComponent(jLabel3)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jLabel1))
-                            .addComponent(txtUsuario, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jLabel2)))
+                    .addComponent(jLabel3, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(txtUsuario, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel1)
+                    .addComponent(jLabel2))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
@@ -244,6 +244,11 @@ public class FrameCliente extends javax.swing.JFrame {
         try {
         connectToServer();
       jButton1.setEnabled(false);
+       jbenviarrrr.setEnabled(true);
+        jbEnviar.setEnabled(true);
+        btSeleccionar.setEnabled(true);
+        jbActualizar.setEnabled(true);
+        jButton2.setEnabled(true);
     } catch (IOException ex) {
         Logger.getLogger(FrameCliente.class.getName()).log(Level.SEVERE, null, ex);
         JOptionPane.showMessageDialog(this, "No se pudo conectar al servidor.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -257,9 +262,17 @@ public class FrameCliente extends javax.swing.JFrame {
             try {
                 String nombre= txtUsuario.getText();
                 listModel.removeElement(nombre);
+                 out.println("DISCONNECT");
+                 in.close();
+                 out.close();
                 socket.close(); // Cierra el ServerSocket
                 AreaConversacion.append("Servidor desconectado.\n");
                 jButton1.setEnabled(true);
+                jbenviarrrr.setEnabled(false);
+                jbEnviar.setEnabled(false);
+                btSeleccionar.setEnabled(false);
+                jbActualizar.setEnabled(false);
+                jButton2.setEnabled(false);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -273,11 +286,11 @@ public class FrameCliente extends javax.swing.JFrame {
     private void btSeleccionarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btSeleccionarActionPerformed
 // se toma de https://es.stackoverflow.com/questions/254478/abrir-file-chooser-o-gestor-de-archivos-en-una-ruta-especifica
 //Ubicacion del archivo
-JFileChooser jf = new JFileChooser("C:\\Users\\david\\Desktop");
+JFileChooser jf = new JFileChooser("C:\\Users\\Sala_000\\Downloads");
 jf.setFileSelectionMode(JFileChooser.FILES_ONLY);
 jf.setMultiSelectionEnabled(false);
 //cargue de archivos
-FileNameExtensionFilter filter=new FileNameExtensionFilter("Todos los Archivos", "txt", "html", "exe", "bad");
+FileNameExtensionFilter filter=new FileNameExtensionFilter("Todos los Archivos", "txt", "html", "exe", "bad","doc","rtf","xlsx");
 jf.setFileFilter(filter);
 //se selecciona un archivo
 int returnValue = jf.showOpenDialog(null);
@@ -293,7 +306,8 @@ if(returnValue==JFileChooser.APPROVE_OPTION){
     private void jbenviarrrrActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbenviarrrrActionPerformed
      String rutaArchivo = txtSeleccionArchivo.getText();
     String selectedUser = AreaContactos.getSelectedValue();
-    String destino="C:\\Users\\david\\Desktop\\destino";
+    String destino="C:\\Users\\Sala_000\\Desktop";
+    
     if (rutaArchivo.isEmpty()) {
         JOptionPane.showMessageDialog(this, "Debe seleccionar un archivo antes de enviarlo.", "Advertencia", JOptionPane.WARNING_MESSAGE);
         return;
@@ -308,10 +322,9 @@ if(returnValue==JFileChooser.APPROVE_OPTION){
     String nombreArchivoOriginal = sourcePath.getFileName().toString();
     // Crear un nuevo nombre de archivo con un identificador único
     // se puede utilizar uuid o hacer un numero random 
-    String nuevoNombreArchivo = null;
+     String nombre = txtUsuario.getText();
+    String nuevoNombreArchivo = nombre +"_" + i + "_" + nombreArchivoOriginal;
    // int numero =(int)(Math.random()*100+1);
-    String nombre = txtUsuario.getText();	
-    nuevoNombreArchivo = nombre +"_" + i + "_" + nombreArchivoOriginal;
     i++;
     Path destinoPath = Paths.get(destino, nuevoNombreArchivo);
     // Copia el archivo seleccionado a la carpeta de destino
@@ -319,6 +332,7 @@ if(returnValue==JFileChooser.APPROVE_OPTION){
         Files.copy(sourcePath, destinoPath);
         AreaConversacion.append("Archivo copiado exitosamente a: " + destinoPath.toString() + "\n");
         out.println("@" + selectedUser + " FILE " + rutaArchivo);
+        enviarArchivo(sourcePath.toFile());
     } catch (IOException e) {
         JOptionPane.showMessageDialog(this, "Error al copiar el archivo: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         return;
@@ -393,10 +407,30 @@ if(returnValue==JFileChooser.APPROVE_OPTION){
         }
     }
      
-    
+    private void enviarArchivo(File archivo) throws IOException {
+    FileInputStream fileIn = null;
+    try {
+        fileIn = new FileInputStream(archivo);
+        byte[] buffer = new byte[4096];
+        int bytesRead;
+
+        while ((bytesRead = fileIn.read(buffer)) != -1) {
+            socket.getOutputStream().write(buffer, 0, bytesRead);
+        }
+        socket.getOutputStream().flush();
+        
+        AreaConversacion.append("Archivo enviado correctamente.\n");
+
+    } finally {
+        if (fileIn != null) {
+            fileIn.close();
+        }
+    }
+}
      
      
     private void connectToServer() throws IOException {
+        try {
         socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
@@ -406,6 +440,10 @@ if(returnValue==JFileChooser.APPROVE_OPTION){
         txtUsuario.setText(name);
         new Thread(new FrameCliente.IncomingReader()).start();
         AreaContactos.setModel(listModel);
+    } catch (IOException ex) {
+        JOptionPane.showMessageDialog(this, "No se pudo conectar al servidor. Intente nuevamente.", "Error", JOptionPane.ERROR_MESSAGE);
+        jButton1.setEnabled(true);
+    }
     }
     
     private class IncomingReader implements Runnable {
@@ -435,7 +473,5 @@ if(returnValue==JFileChooser.APPROVE_OPTION){
      TxtMensaje.setText("");
      AreaContactos.clearSelection();
  }
-         
-
-
+       
 }

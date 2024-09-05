@@ -5,10 +5,14 @@
  */
 package programa;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -19,14 +23,12 @@ import java.util.HashMap;
  */
 public class Frame_Servidor extends javax.swing.JFrame {
     private static final int PORT = 12345;
-   ServerSocket serverSocket;
+    private ServerSocket serverSocket;
     private static HashMap<String, PrintWriter> clientMap = new HashMap<>();
-    /**
-     * Crea el fraem del servidor 
-     */
+
     public Frame_Servidor() {
         initComponents();
-      
+        jbDesconectar.setEnabled(false);
     }
 
   
@@ -102,36 +104,37 @@ public class Frame_Servidor extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jbConectarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbConectarActionPerformed
-      txtArea.append("Iniciando servidor en el puerto " + PORT + "...\n");
-    try {
-        serverSocket = new ServerSocket(PORT);
-        txtArea.append("Servidor iniciado exitosamente.\n");
-        new Thread(() -> {
-            while (!serverSocket.isClosed()) {
-                try {
-                    Socket clientSocket = serverSocket.accept();
-                    txtArea.append("Cliente conectado desde: " + clientSocket.getInetAddress() + "\n");
-                    new ClientHandler(clientSocket, this).start();
-                } catch (IOException e) {
-                    txtArea.append("Error al aceptar conexión de cliente: " + e.getMessage() + "\n");
-                    e.printStackTrace();
+     txtArea.append("Iniciando servidor en el puerto " + PORT + "...\n");
+        try {
+            serverSocket = new ServerSocket(PORT);
+            txtArea.append("Servidor iniciado exitosamente.\n");
+            jbDesconectar.setEnabled(true);
+            new Thread(() -> {
+                while (!serverSocket.isClosed()) {
+                    try {
+                        Socket clientSocket = serverSocket.accept();
+                        txtArea.append("Cliente conectado desde: " + clientSocket.getInetAddress() + "\n");
+                        new ClientHandler(clientSocket, this).start();
+                        
+                    } catch (IOException e) {
+                        txtArea.append("Error al aceptar conexión de cliente: " + e.getMessage() + "\n");
+                        e.printStackTrace();
+                    }
                 }
-            }
-        }).start();
-    } catch (IOException e) {
-        txtArea.append("Error al iniciar el servidor: " + e.getMessage() + "\n");
-        e.printStackTrace();
-    }
+            }).start();
+        } catch (IOException e) {
+            txtArea.append("Error al iniciar el servidor: " + e.getMessage() + "\n");
+            e.printStackTrace();
+        }
     }//GEN-LAST:event_jbConectarActionPerformed
 
     private void jbDesconectarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbDesconectarActionPerformed
       
-        if (serverSocket != null && !serverSocket.isClosed()) {
+         if (serverSocket != null && !serverSocket.isClosed()) {
             try {
-                serverSocket.close(); // Cierra el ServerSocket
+                serverSocket.close();
                 txtArea.append("Servidor desconectado.\n");
                 System.exit(0);
-                
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -163,28 +166,21 @@ private static class ClientHandler extends Thread {
         private PrintWriter out;
         private BufferedReader in;
         private String name;
-      
         private Frame_Servidor servidor;
-        
-       public ClientHandler(Socket socket, Frame_Servidor servidor) {
-        this.socket = socket;
-        this.servidor = servidor;
-    }
+
+        public ClientHandler(Socket socket, Frame_Servidor servidor) {
+            this.socket = socket;
+            this.servidor = servidor;
+        }
 
         public void run() {
             try {
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 out = new PrintWriter(socket.getOutputStream(), true);
-                // Cliente conectado
-              
-                 servidor.appendMessageToTextArea("Nuevo cliente conectado desde: " + socket.getInetAddress());
-              
-                out.println("");
-                 name = in.readLine();
-            
-                //out.println("Ingresa el mensaje: ");
-                //name = in.readLine();
-                
+
+                servidor.appendMessageToTextArea("Nuevo cliente conectado desde: " + socket.getInetAddress());
+
+                name = in.readLine();
                 synchronized (clientMap) {
                     clientMap.put(name, out);
                     updateUserList();
@@ -192,13 +188,34 @@ private static class ClientHandler extends Thread {
 
                 String message;
                 while ((message = in.readLine()) != null) {
-                    if (message.startsWith("@")) {
+                    if (message.startsWith("FILE")) {
+                        String[] tokens = message.split(" ");
+                        String fileName = tokens[2];
+                        long fileSize = Long.parseLong(tokens[3]);
+                        
+                          // Crear el archivo en la carpeta de destino
+                        File file = new File("C:\\Users\\Sala_000\\Desktop", fileName);
+                        FileOutputStream fileOutputStream = new FileOutputStream(file);
+
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        long totalBytesRead = 0;
+                        
+                         while (totalBytesRead < fileSize && (bytesRead = socket.getInputStream().read(buffer)) != -1) {
+                            fileOutputStream.write(buffer, 0, bytesRead);
+                            totalBytesRead += bytesRead;
+                        }
+
+                        fileOutputStream.close();
+                        System.out.println("Archivo recibido: " + fileName);
+                        
+                        //receiveFile(message.substring(6));
+                    } else if (message.startsWith("@")) {
                         String[] splitMessage = message.split(" ", 2);
                         String targetName = splitMessage[0].substring(1);
                         String privateMessage = splitMessage[1];
                         sendMessage(targetName, privateMessage);
                         servidor.appendMessageToTextArea(name + " ( privado a " + targetName + "): " + privateMessage);
-                        
                     } else {
                         broadcastMessage(name + ": " + message);
                         servidor.appendMessageToTextArea(name + ": " + message);
@@ -212,14 +229,31 @@ private static class ClientHandler extends Thread {
                         clientMap.remove(name);
                         updateUserList();
                     }
-                    broadcastMessage(name + " Se ha desconectado.");
-                     servidor.appendMessageToTextArea(name + " se ha desconectado.");
+                    broadcastMessage(name + " se ha desconectado.");
+                    servidor.appendMessageToTextArea(name + " se ha desconectado.");
                 }
                 try {
                     socket.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            }
+        }
+
+        private void receiveFile(String fileName) {
+            try {
+                BufferedInputStream bis = new BufferedInputStream(socket.getInputStream());
+                FileOutputStream fos = new FileOutputStream("received_" + fileName);
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = bis.read(buffer)) != -1) {
+                    fos.write(buffer, 0, bytesRead);
+                }
+                fos.close();
+                servidor.appendMessageToTextArea("Archivo " + fileName + " recibido.");
+            } catch (IOException e) {
+                servidor.appendMessageToTextArea("Error al recibir archivo: " + e.getMessage());
+                e.printStackTrace();
             }
         }
 
@@ -236,7 +270,6 @@ private static class ClientHandler extends Thread {
                 PrintWriter targetOut = clientMap.get(targetName);
                 if (targetOut != null) {
                     targetOut.println(name + " (private): " + message);
-                 
                 }
             }
         }
@@ -252,3 +285,5 @@ private static class ClientHandler extends Thread {
         }
     }
 }
+
+
